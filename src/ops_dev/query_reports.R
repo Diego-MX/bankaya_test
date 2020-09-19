@@ -1,5 +1,5 @@
 # Diego Villamil
-# CDMX, 18 de septiembre 2020
+# CDMX, September 18th, 2020 
 
 source("../src/db_helpers.R")
 filter <- dplyr::filter
