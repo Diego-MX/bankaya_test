@@ -1,0 +1,6 @@
+id,frequency,interest_rate,penalty_rate,penalty_type,update_dt
+1,12,0.1,0,all_payments,20/09/20
+2,12,0.1,0.1,all_payments,20/09/20
+3,12,0.15,0,all_payments,20/09/20
+4,12,0.15,0.15,all_payments,20/09/20
+5,12,0.2,0,all_payments,20/09/20

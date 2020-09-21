@@ -1,3 +1,5 @@
 tidyverse
 magrittr
 lubridate
+RPostgres
+feather
