@@ -19,9 +19,9 @@ get_active_loans <- function (conn, type="date") {
   
   tbl_ref <- switch (type
   , "date"    = tbl(conn, "loans") %>% 
-   filter(between(today(), start_date, end_date))
+        filter(between(today(), start_date, end_date))
   , "default" = tbl(conn, "loans") %>% 
-   filter(remaining_amount > 0, not(is_default)) )
+        filter(remaining_amount > 0, not(is_default)) )
 
   return (tbl_ref)
 }
@@ -38,14 +38,13 @@ collect_customers <- function (query, columns) {
 }
 
 
-multiple_active_loans <- function (conn,
-      active_type="date") {
+multiple_active_loans <- function (conn, active_type="date") {
 
   multiple_loans <- get_active_loans(conn, active_type) %>%
     group_by(customer_id) %>%
     summarize(n_loans = n()) %>%
     filter(n_loans > 1) 
-
+  
   the_customers_df <- tbl(conn, "customers") %>%
     right_join(multiple_loans, by=c("id" = "customer_id")) %>%
     collect_customers()
@@ -95,10 +94,10 @@ one_active_loan <- function (conn,
   customers_one_loan <- get_active_loans(conn, active_type) %>%
     group_by(customer_id) %>%
     mutate(n_loans = n()) %>%
-    filter(n() == 1)
+    filter(n() == 1) %>% 
+    rename(id = loan_id)
 
-  join_column <- if_else(also_previous_loans, "customer_id", "loan_id")
-
+  join_column <- if (also_previous_loans) "customer_id" else "loan_id"
   payments_from_them <- tbl(conn, "payments") %>%
     semi_join(customers_one_loan, by=join_column) %>%
     group_by(customer_id) %>%
@@ -118,7 +117,7 @@ one_active_loan <- function (conn,
 zipcode_and_age <- function (conn, buckets) {
 
   if (missing(buckets)) buckets <- c(18, 25, 40, 60, 80)
-    bucket_labels <- buckets %>% head(-1) %>% sprintf("%d-...", .)
+  bucket_labels <- buckets %>% head(-1) %>% sprintf("%d-...", .)
 
   if (min(buckets) < 18)
     warning("Sólo hay préstamos para adultos mayores de 18, pero
@@ -130,7 +129,10 @@ zipcode_and_age <- function (conn, buckets) {
   if (length(buckets) != 5) {
     stop("Currently we only allow five age buckets.") 
   } else {
-    for (i=1:4) assign("buckets_")
+    for (i in 1:4) {
+      assign(glue("buckets_{i+1}"), buckets[i+1])
+      assign(glue("bucket_label_{i}"), bucket_labels[i])
+    }
   }
     
   customer_labels <- tbl(conn, "customers") %>%
@@ -138,11 +140,11 @@ zipcode_and_age <- function (conn, buckets) {
     mutate(age = (today() - birthdate)/365.25,
       # age_grp= cut(age, buckets, bucket_labels, right=FALSE)
       age_grp  = case_when(
-          age < buckets_2 ~ bucket_labels[1], 
-          age < buckets_3 ~ bucket_labels[2], 
-          age < buckets_4 ~ bucket_labels[3], 
-          age < buckets_5 ~ bucket_labels[4], 
-          TRUE ~ NA_character_)) %>% collect()
+          age < buckets_2 ~ bucket_label_1, 
+          age < buckets_3 ~ bucket_label_2, 
+          age < buckets_4 ~ bucket_label_3, 
+          age < buckets_5 ~ bucket_label_4, 
+          TRUE ~ NA_character_)) 
 
   the_grp_payments_df <- tbl(conn, "payments") %>%
     left_join(customer_labels, by=c("customer_id" = "id")) %>%
